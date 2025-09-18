@@ -6,18 +6,23 @@ pub fn build(b: *std.Build) void {
 
     const exe = b.addExecutable(.{
         .name = "zig-c",
-        .root_source_file = .{ .path = "src/main.zig" },
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/main.zig"),
+
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     exe.linkLibC();
+
     exe.addCSourceFile(.{
-        .file = .{ .path = "libs/stb_image.c" },
+        .file = b.path("libs/stb_image.c"),
         .flags = &.{},
+        .language = .c,
     });
 
-    exe.addIncludePath(.{ .path = "libs" });
+    exe.addIncludePath(b.path("libs"));
 
     b.installArtifact(exe);
 
@@ -33,9 +38,7 @@ pub fn build(b: *std.Build) void {
     run_step.dependOn(&run_cmd.step);
 
     const unit_tests = b.addTest(.{
-        .root_source_file = .{ .path = "src/main.zig" },
-        .target = target,
-        .optimize = optimize,
+        .root_module = exe.root_module,
     });
 
     const run_unit_tests = b.addRunArtifact(unit_tests);

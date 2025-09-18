@@ -1,5 +1,5 @@
 const std = @import("std");
-const c = @import("c.zig");
+const c = @import("c.zig").cImport;
 
 pub fn main() !void {
     const texturePath = "painting.png";
@@ -11,16 +11,16 @@ pub fn main() !void {
     var channels: c_int = undefined;
 
     // This is where we call C code!
-    var buffer = c.stbi_load(texturePath, &w, &h, &channels, 0);
+    const buffer = c.stbi_load(texturePath, &w, &h, &channels, 0);
     defer c.stbi_image_free(buffer);
 
     std.log.info("Loaded texture {s}: width: {}, height: {}, channels: {}", .{ texturePath, w, h, channels });
 
     // Paint the image in terminal:
 
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
+    var stdout_buffer: [1024]u8 = undefined;
+    var stdout_writer = std.fs.File.stdout().writer(&stdout_buffer);
+    const stdout = &stdout_writer.interface;
 
     try stdout.print("\n\n", .{});
 
@@ -41,7 +41,7 @@ pub fn main() !void {
         try stdout.print("\n", .{});
     }
 
-    try bw.flush();
+    try stdout.flush();
 }
 
 // Color painting functions
